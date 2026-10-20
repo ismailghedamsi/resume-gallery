@@ -97,7 +97,7 @@ public class FolderActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setTitle("Gallery Enhanced");
+        setTitle("Resume Gallery");
         if (savedInstanceState != null) {
             pickerAutoLaunched = savedInstanceState.getBoolean("pickerAutoLaunched", false);
             firstRunHandled = savedInstanceState.getBoolean("firstRunHandled", false);
@@ -261,7 +261,7 @@ public class FolderActivity extends Activity {
      *  sees which session he is browsing. */
     private void updateTitle() {
         SessionStore.Session s = SessionStore.getActive(this);
-        setTitle(s != null ? s.name : "Gallery Enhanced");
+        setTitle(s != null ? s.name : "Resume Gallery");
     }
 
     /** Entry point after storage permission is available. With no

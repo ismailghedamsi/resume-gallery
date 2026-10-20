@@ -1,8 +1,8 @@
-# Gallery Enhanced — from-scratch Android gallery
+# Resume Gallery — from-scratch Android gallery
 
 Original, from-scratch gallery app for Ismail. Plain Java, Android framework
 only — no libraries, no Gradle. Package `app.enhancedgallery`, launcher label
-"Gallery Enhanced". minSdk 29, targetSdk 35. Local storage only via
+"Resume Gallery". minSdk 29, targetSdk 35. Local storage only via
 MediaStore (READ_MEDIA_IMAGES / READ_EXTERNAL_STORAGE, no internet permission).
 Installs side-by-side with any other gallery; nothing needs to be uninstalled.
 
@@ -73,6 +73,13 @@ uses the same natural comparator as its tiebreak (e.g. "Set 2 Disc 2"
 before "Set 2 Disc 10"). Verified with a JVM self-check:
 [1.jpg, 2.jpg, 10.jpg, 10a.jpg, a2.jpg, a02.jpg, a10.jpg, ...] sorts in
 exactly that order, and 1 < 2 < 10 / a2 < a10 hold.
+
+## v2.0.2 (versionCode 13) — renamed to Resume Gallery
+
+The app is now called **Resume Gallery**. This is a display-name change
+only: the Android package remains `app.enhancedgallery` and the signing key
+is unchanged, so it installs as a normal update and all existing sessions,
+folders, and saved positions carry over.
 
 ## v2.0.1 (versionCode 12) — switcher create-flow fix
 

@@ -130,7 +130,7 @@ public class SettingsActivity extends Activity {
         aboutTitle.setPadding(dp(16), 0, dp(16), dp(2));
         root.addView(aboutTitle);
         TextView about = new TextView(this);
-        about.setText("Gallery Enhanced\nVersion " + versionString());
+        about.setText("Resume Gallery\nVersion " + versionString());
         about.setTextSize(14);
         about.setTextColor(Color.LTGRAY);
         about.setGravity(Gravity.START);
