@@ -6,6 +6,13 @@ only — no libraries, no Gradle. Package `app.enhancedgallery`, launcher label
 MediaStore (READ_MEDIA_IMAGES / READ_EXTERNAL_STORAGE, no internet permission).
 Installs side-by-side with any other gallery; nothing needs to be uninstalled.
 
+## Built with AI
+
+Resume Gallery is an AI-assisted ("vibe coded") project: it was designed
+and specified by Ismail Ghedamsi, and its code was written by Muse
+(Meta's Muse Spark) working from those specifications, then iterated
+build by build against the author's testing and corrections.
+
 ## Features
 
 1. **Folder browsing** — home screen lists the folders you added (see v1.4:
