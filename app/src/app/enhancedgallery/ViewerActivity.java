@@ -44,6 +44,20 @@ public class ViewerActivity extends Activity implements ZoomableImageView.Listen
 
     private int loadToken = 0;
 
+    // Keys for the viewer's own recreation state (see onCreate and
+    // onSaveInstanceState).
+    private static final String STATE_FOLDER_PATH = "viewerFolderPath";
+    private static final String STATE_FOLDER_TREE = "viewerFolderTreeUri";
+    private static final String STATE_FOLDER_NAME = "viewerFolderName";
+    private static final String STATE_IMAGE_PATH = "viewerImagePath";
+    private static final String STATE_IMAGE_INDEX = "viewerImageIndex";
+    private static final String STATE_FROM_GRID = "viewerFromGrid";
+    /** The photo this viewer is headed for / currently showing, kept
+     *  current by showImage so onSaveInstanceState always names the
+     *  LATEST photo, not the one the viewer was opened on. */
+    private String pendingImagePath = null;
+    private int pendingImageIndex = 0;
+
     /** Session switcher outcomes for the viewer. */
     private final SessionSwitcher.Callback switchCallback =
             new SessionSwitcher.Callback() {
@@ -95,19 +109,40 @@ public class ViewerActivity extends Activity implements ZoomableImageView.Listen
         String folderPath = getIntent().getStringExtra("folderPath");
         String folderTreeUri = getIntent().getStringExtra("folderTreeUri");
         String folderName = getIntent().getStringExtra("folderName");
-        currentFolder = new Folder(folderName != null ? folderName : "", folderPath);
-        currentFolder.treeUri = folderTreeUri;
-        fromGrid = getIntent().getBooleanExtra("fromGrid", true);
+        boolean fromGridVal = getIntent().getBooleanExtra("fromGrid", true);
         // "startImagePath" (grid taps, incl. in-folder search results):
         // open AT that photo in the folder's FULL list, resolved by
         // path — the sender's index may be a filtered position and is
         // meaningless here. Falls back to the legacy imagePath/imageIndex
         // extras (resume flow) when absent.
         final String pathExtra = getIntent().getStringExtra("startImagePath");
-        final boolean byPathOnly = pathExtra != null;
-        final String startImagePath = byPathOnly
+        boolean byPathOnly = pathExtra != null;
+        String startImagePath = byPathOnly
                 ? pathExtra : getIntent().getStringExtra("imagePath");
-        final int startIndex = getIntent().getIntExtra("imageIndex", 0);
+        int startIndex = getIntent().getIntExtra("imageIndex", 0);
+        if (savedInstanceState != null
+                && savedInstanceState.containsKey(STATE_FOLDER_PATH)) {
+            // Android is RECREATING this viewer — the process was
+            // reclaimed (inactivity / memory) and the task is being
+            // restored. The intent extras still name the photo the
+            // viewer was FIRST opened on; every photo navigated to
+            // since lives only in our recreation state. Use it, so the
+            // restored viewer lands on the photo the user actually
+            // left. (A stale path falls back to the saved index.)
+            folderPath = savedInstanceState.getString(STATE_FOLDER_PATH);
+            folderTreeUri = savedInstanceState.getString(STATE_FOLDER_TREE);
+            folderName = savedInstanceState.getString(STATE_FOLDER_NAME);
+            startImagePath = savedInstanceState.getString(STATE_IMAGE_PATH);
+            startIndex = savedInstanceState.getInt(STATE_IMAGE_INDEX, 0);
+            fromGridVal = savedInstanceState.getBoolean(
+                    STATE_FROM_GRID, fromGridVal);
+            byPathOnly = false;
+        }
+        currentFolder = new Folder(folderName != null ? folderName : "", folderPath);
+        currentFolder.treeUri = folderTreeUri;
+        fromGrid = fromGridVal;
+        pendingImagePath = startImagePath;
+        pendingImageIndex = startIndex;
 
         FrameLayout root = new FrameLayout(this);
         root.setBackgroundColor(Color.BLACK);
@@ -275,7 +310,10 @@ public class ViewerActivity extends Activity implements ZoomableImageView.Listen
 
     /** Switch to a different folder at the given index (cross-folder advance). */
     private void switchFolder(final Folder f, final int newIndex, String toast) {
-        currentFolder = f;
+        // currentFolder is only assigned once the new folder's images
+        // are actually on screen (in the UI callback below): until
+        // then the on-screen photo still belongs to the OLD folder,
+        // and the saved state must keep naming that consistent pair.
         final int token = ++loadToken;
         ThumbLoader.BG.execute(new Runnable() {
             @Override public void run() {
@@ -288,6 +326,7 @@ public class ViewerActivity extends Activity implements ZoomableImageView.Listen
                                     Toast.LENGTH_SHORT).show();
                             return;
                         }
+                        currentFolder = f;
                         showImage(Math.max(0, Math.min(newIndex, images.size() - 1)), false);
                     }
                 });
@@ -305,6 +344,8 @@ public class ViewerActivity extends Activity implements ZoomableImageView.Listen
         if (images == null || images.isEmpty()) return;
         index = newIndex;
         final ImageItem item = images.get(index);
+        pendingImagePath = item.path;
+        pendingImageIndex = index;
         infoText.setText(folderName() + "   " + (index + 1) + " / " + images.size()
                 + "\n" + item.name);
         // the active session's persistent resume point, synchronous,
@@ -489,6 +530,26 @@ public class ViewerActivity extends Activity implements ZoomableImageView.Listen
             ImageItem item = images.get(index);
             SessionStore.savePoint(this, currentFolder.path, item.path, index);
         }
+    }
+
+    /** Recreation state: the CURRENT folder + photo, kept current by
+     *  every showImage. When Android reclaims the process (inactivity /
+     *  memory) and later restores the task, the recreated viewer reads
+     *  this in onCreate instead of the stale launch intent — the same
+     *  guarantee the session resume point gives a cold start. */
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if (currentFolder == null) return;
+        outState.putString(STATE_FOLDER_PATH, currentFolder.path);
+        outState.putString(STATE_FOLDER_TREE, currentFolder.treeUri);
+        outState.putString(STATE_FOLDER_NAME, currentFolder.name);
+        // pendingImagePath/Index are updated synchronously by every
+        // showImage, so they always name the photo actually on screen
+        // together with currentFolder — never a half-switched pair.
+        outState.putString(STATE_IMAGE_PATH, pendingImagePath);
+        outState.putInt(STATE_IMAGE_INDEX, pendingImageIndex);
+        outState.putBoolean(STATE_FROM_GRID, fromGrid);
     }
 
     @Override

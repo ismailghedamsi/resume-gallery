@@ -81,6 +81,21 @@ before "Set 2 Disc 10"). Verified with a JVM self-check:
 [1.jpg, 2.jpg, 10.jpg, 10a.jpg, a2.jpg, a02.jpg, a10.jpg, ...] sorts in
 exactly that order, and 1 < 2 < 10 / a2 < a10 hold.
 
+## v2.0.3 (versionCode 14) — resume survives Android reclaiming the app
+
+Bug (user report): closing the app and reopening resumed correctly,
+but when Android reclaimed the backgrounded app for inactivity and
+later restored the task, the viewer came back on the photo it had
+been OPENED on, not the last one viewed. The session point was being
+saved all along — the recreated viewer simply never read it: Android
+recreates a killed activity from its original launch intent, and the
+viewer kept no recreation state of its own. The viewer now writes
+its current folder + photo into onSaveInstanceState on every photo
+shown (showImage keeps a pending path/index in sync) and prefers
+that state over the intent extras when recreated. switchFolder also
+assigns the new folder only once its images are on screen, so the
+saved folder/photo pair is never half-switched.
+
 ## v2.0.2 (versionCode 13) — renamed to Resume Gallery
 
 The app is now called **Resume Gallery**. This is a display-name change
